@@ -1,0 +1,15 @@
+﻿@page "/formulario"
+@using BlazorApp1.Model
+@using MudBlazor
+@inject DataService DataService
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <Autocomplete Label="Pesquisar"
+                      @bind-SelectedValue="texto" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string? texto;
+}

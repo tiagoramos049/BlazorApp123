@@ -1,0 +1,57 @@
+﻿@using BlazorApp1.Model
+@rendermode InteractiveServer
+
+<MudAutocomplete T="string"
+    Label="@Label"
+    @bind-Value="SelectedValue"
+    SearchFunc="@OnSearch"
+    Immediate="true"
+    OnKeyDown="@HandleKeyDown" />
+
+@code {
+    [Parameter] public string Label { get; set; } = "Pesquisar";
+    [Parameter] public string? SelectedValue { get; set; }
+    [Parameter] public EventCallback<string> SelectedValueChanged { get; set; }
+
+    [Inject] private DataService DataService { get; set; } // Injeta diretamente o serviço de busca
+
+    private Timer? _debounceTimer;
+    private string? _lastQuery;
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Console.WriteLine("Enter pressionado. Forçando busca.");
+            await OnSearch(SelectedValue ?? string.Empty, CancellationToken.None);
+        }
+    }
+    private async Task<IEnumerable<string>> OnSearch(string value, CancellationToken token)
+    {
+        Console.WriteLine($"OnSearch chamado com valor: {value}");
+
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 3)
+        {
+            Console.WriteLine("Valor ignorado por ser vazio ou menor que 3 caracteres.");
+            return Enumerable.Empty<string>();
+        }
+
+        // Simula busca no endpoint
+        var result = await DataService.ObterEstadoAsync(value, token);
+        Console.WriteLine($"Resultados encontrados: {string.Join(", ", result)}");
+        return result;
+    }
+
+    private void DebounceSearch(string query, Func<Task> searchFunc, int debounceTime = 300)
+    {
+        _debounceTimer?.Dispose();
+
+        _debounceTimer = new Timer(async _ =>
+        {
+            if (query != _lastQuery)
+            {
+                _lastQuery = query;
+                await searchFunc.Invoke();
+            }
+        }, null, debounceTime, Timeout.Infinite);
+    }
+}
